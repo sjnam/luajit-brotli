@@ -25,3 +25,5 @@ f:close()
 local ret = brotli.compressStream(fname)
 print(ret)
 
+os.remove(fname)
+os.remove(fname..".br")
