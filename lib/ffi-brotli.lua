@@ -16,8 +16,7 @@ local assert = assert
 local _M = { _VERSION = '0.01' }
 
 
-local mt = { __index = _M }
-
+-- local mt = { __index = _M }
 
 
 ffi.cdef[[
@@ -87,7 +86,6 @@ int BrotliEncoderIsFinished(BrotliEncoderState* state);
 
 void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
 
-
 /* decoder */
 typedef struct BrotliDecoderStateStruct BrotliDecoderState;
 
@@ -108,7 +106,6 @@ BrotliDecoderResult BrotliDecoderDecompress(
     const uint8_t encoded_buffer[],
     size_t* decoded_size,
     uint8_t decoded_buffer[]);
-
 ]]
 
 
