@@ -1,5 +1,6 @@
 local brotli = require "lib.ffi-brotli"
 
+local assert = assert
 local str_rep = string.rep
 
 local txt = str_rep("abcd", 1000)
@@ -14,5 +15,5 @@ local decoded, err = brotli.decompress(encoded)
 if not decoded then
    print(err)
 else
-   print(decoded)
+   assert(txt == decoded)
 end
