@@ -16,4 +16,9 @@ if not decoded then
    print(err)
 else
    assert(txt == decoded)
+   print(decoded)
 end
+
+local ret = brotli.compressStream("input.txt")
+print(ret)
+
