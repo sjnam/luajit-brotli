@@ -47,14 +47,17 @@ The `options` argument is a Lua table holding the following keys:
 
     Set Brotli quality (compression) level.
     Acceptable values are in the range from `0` to `11`.
+    (Defaults to 11)
 
 * `lgwin`
 
-    lgwin parameter value, e.g. `::BROTLI_DEFAULT_WINDOW`
+    Set Brotli window size. Window size is `(1 << lgwin) - 16`.
 
 * `mode`
 
-    mode parameter value, e.g. `::BROTLI_DEFAULT_MODE`
+    The compression mode can be `BROTLI_MODE_GENERIC` (0, default),
+   `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
+   `BROTLI_MODE_FONT` (2, for WOFF 2.0).
 
 decompress
 ----------
