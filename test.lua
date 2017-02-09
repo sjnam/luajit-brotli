@@ -7,8 +7,8 @@ local compress, decompress = brotli.compress, brotli.decompress
 local result = {}
 
 for lvl=0,11 do
-   local encoded, err = brotli.compress(txt, {quality = lvl})
-   local decoded, err = brotli.decompress(encoded)
+   local encoded, err = compress(txt, {quality = lvl})
+   local decoded, err = decompress(encoded)
    assert(txt == decoded)
    result[#result+1] = #encoded
 end
