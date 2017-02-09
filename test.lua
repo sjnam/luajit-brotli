@@ -1,4 +1,4 @@
-local brotli = require "lib.ffi-brotli"
+local brotli = require "lib.resty.brotli"
 
 local txt = string.rep("ABCDEFGHIJ", 100000)
 
