@@ -9,22 +9,28 @@ Status
 This library is still experimental and under early development.
 
 
+Installation
+============
+To install `lua-ffi-brotli` you need to install
+[Brotli](https://github.com/google/brotli#build-instructions)
+with shared libraries firtst.
+Then you can install `lua-ffi-brotli` by placing `lib/ffi-brotli.lua` to
+your lua library path.
+
+
 Example
 =======
 ```` lua
-local brotli = require "lib.ffi-brotli"
+local brotli = require "ffi-brotli"
 
 local txt = string.rep("ABCD", 1000)
 print("Uncompressed size:", #txt)
 local c, err = brotli.compress(txt)
-if not c then
-   print(err)
-   return
-end
 print("Compressed size:", #c)
 local txt2, err = brotli.decompress(c)
 assert(txt == txt2)
 ````
+
 
 Methods
 =======
@@ -56,7 +62,3 @@ decompress
 
 Decompresses the data in encoded_buffer into decoded_buffer.
 
-
-Authors
-=======
-Soojin Nam <jsunam@gmail.com>, Kakao Corp.
