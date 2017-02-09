@@ -1,6 +1,6 @@
 Name
 ====
-lua-ffi-brotli - Lua bindings to Google
+lua-resty-brotli - Lua bindings to Google
 [Brotli](https://github.com/google/brotli) for LuaJIT using FFI.
 
 
@@ -11,17 +11,17 @@ This library is still experimental and under early development.
 
 Installation
 ============
-To install `lua-ffi-brotli` you need to install
+To install `lua-resty-brotli` you need to install
 [Brotli](https://github.com/google/brotli#build-instructions)
 with shared libraries firtst.
-Then you can install `lua-ffi-brotli` by placing `lib/ffi-brotli.lua` to
+Then you can install `lua-resty-brotli` by placing `lib/resty/brotli.lua` to
 your lua library path.
 
 
 Example
 =======
 ```` lua
-local brotli = require "ffi-brotli"
+local brotli = require "resty.brotli"
 
 local txt = string.rep("ABCD", 1000)
 print("Uncompressed size:", #txt)
