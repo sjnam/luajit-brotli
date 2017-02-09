@@ -38,12 +38,16 @@ Compresses the data in input_buffer into encoded_buffer.
 The `options` argument is a Lua table holding the following keys:
 
 * `quality`
+
     Set Brotli quality (compression) level.
-    Acceptable values are in the range from `0` to `11`,
-    e.g. `::BROTLI_DEFAULT_QUALITY`
+    Acceptable values are in the range from `0` to `11`.
+
 * `lgwin`
+
     lgwin parameter value, e.g. `::BROTLI_DEFAULT_WINDOW`
+
 * `mode`
+
     mode parameter value, e.g. `::BROTLI_DEFAULT_MODE`
 
 decompress
