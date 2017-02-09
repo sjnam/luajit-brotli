@@ -1,29 +1,21 @@
 local brotli = require "lib.ffi-brotli"
 
-local txt = string.rep("abcd", 1000)
+local txt = string.rep("ABCDEFGHIJ", 100000)
 
-local encoded, err = brotli.compress(txt)
-if not encoded then
-   print(err)
-   return
-end
+local compress, decompress = brotli.compress, brotli.decompress
 
-local decoded, err = brotli.decompress(encoded)
-if not decoded then
-   print(err)
-else
+local result = {}
+
+for lvl=0,11 do
+   local encoded, err = brotli.compress(txt, {quality = lvl})
+   local decoded, err = brotli.decompress(encoded)
    assert(txt == decoded)
-   print(decoded)
+   result[#result+1] = #encoded
 end
 
-local fname = "input.txt"
-local f = io.open(fname, "wb")
-f:write(txt)
-f:close()
+print("org size=", #txt, "\n\ncompressed")
+print("level", "size", "\n------------")
 
-
-local ret = brotli.compressStream(fname)
-print(ret)
-
-os.remove(fname)
-os.remove(fname..".br")
+for i, v in ipairs(result) do
+   print(i-1, v)
+end
