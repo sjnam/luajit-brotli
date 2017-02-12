@@ -37,7 +37,7 @@ Methods
 
 compress
 --------
-`syntax: encoded_buffer, err = brotli.compress(input_buffer, options?, buffer_size)`
+`syntax: encoded_buffer, err = brotli.compress(input_buffer, options?, buffer_size?)`
 
 Compresses the data in input_buffer into encoded_buffer.
 
@@ -61,7 +61,7 @@ The `options` argument is a Lua table holding the following keys:
 
 decompress
 ----------
-`syntax: decoded_buffer, err = brotli.decompress(encoded_buffer, buffer_size)`
+`syntax: decoded_buffer, err = brotli.decompress(encoded_buffer, buffer_size?)`
 
 Decompresses the data in encoded_buffer into decoded_buffer.
 
