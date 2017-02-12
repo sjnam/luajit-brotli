@@ -14,8 +14,6 @@ local _M = { _VERSION = '0.01' }
 
 
 ffi.cdef[[
-void free(void *ptr);
-
 /* encoder */
 typedef enum BrotliEncoderMode {
   BROTLI_MODE_GENERIC = 0,
