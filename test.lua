@@ -4,12 +4,11 @@ local txt = string.rep("ABCDEFGHIJ", 100000)
 
 local compress, decompress = brotli.compress, brotli.decompress
 
-local bufsize = 256
 local result = {}
 
 for lvl=0,11 do
-   local encoded, err = compress(txt, {quality = lvl}, bufsize)
-   local decoded, err = decompress(encoded, bufsize)
+   local encoded, err = compress(txt, {quality = lvl, mode=1})
+   local decoded, err = decompress(encoded)
    assert(txt == decoded)
    result[#result+1] = #encoded
 end
