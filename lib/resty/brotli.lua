@@ -128,7 +128,8 @@ end
 --_M.compress = compress
 
 
-local function compressStream (str, options)
+local function compressStream (str, options, bufsize)
+   local bufsize = bufsize or kFileBufferSize
    local lgwin = BROTLI_DEFAULT_WINDOW
    local quality = BROTLI_DEFAULT_QUALITY
    local mode = BROTLI_DEFAULT_MODE
@@ -146,15 +147,15 @@ local function compressStream (str, options)
    encoder.BrotliEncoderSetParameter(s, C.BROTLI_PARAM_QUALITY, quality)
    encoder.BrotliEncoderSetParameter(s, C.BROTLI_PARAM_LGWIN, lgwin)
 
-   local buffer = ffi_new("uint8_t[?]", kFileBufferSize*2)
+   local buffer = ffi_new("uint8_t[?]", bufsize*2)
    if not buffer then
       return nil, "out of memory"
    end
 
    local input = buffer
-   local output = buffer + kFileBufferSize
+   local output = buffer + bufsize
    local available_in = ffi_new("size_t[1]", 0)
-   local available_out = ffi_new("size_t[1]", kFileBufferSize)
+   local available_out = ffi_new("size_t[1]", bufsize)
    local next_in = ffi_new("const uint8_t*[1]")
    local next_out = ffi_new("uint8_t*[1]")
    next_out[0] = output
@@ -168,8 +169,8 @@ local function compressStream (str, options)
 
    while true do
       if available_in[0] == 0 and not is_eof then
-         local read_size = kFileBufferSize
-         if len <= kFileBufferSize then
+         local read_size = bufsize
+         if len <= bufsize then
             read_size = len
          end
          ffi_copy(input, ffi_str(p, read_size))
@@ -189,11 +190,11 @@ local function compressStream (str, options)
          break
       end
       
-      if available_out[0] ~= kFileBufferSize then
-         local out_size = kFileBufferSize - available_out[0]
+      if available_out[0] ~= bufsize then
+         local out_size = bufsize - available_out[0]
 
          tab_insert(res, ffi_str(output, out_size))
-         available_out[0] = kFileBufferSize
+         available_out[0] = bufsize
          next_out[0] = output
       end
       
@@ -215,7 +216,8 @@ end
 _M.compress = compressStream
 
 
-local function decompress (encoded_buffer)
+local function decompress (encoded_buffer, bufsize)
+   local bufsize = bufsize or kFileBufferSize
    local s = decoder.BrotliDecoderCreateInstance(nil, nil, nil)
    if not s then
       return nil, "out of memory: cannot create decoder instance"
@@ -224,19 +226,19 @@ local function decompress (encoded_buffer)
    local available_in = ffi_new("size_t[1]", #encoded_buffer)
    local next_in = ffi_new("const uint8_t*[1]")
    next_in[0] = encoded_buffer
-   local buffer = ffi_new("uint8_t[?]", kFileBufferSize)
+   local buffer = ffi_new("uint8_t[?]", bufsize)
 
    local decoded_buffer = {}
    local ret = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
    while ret == C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT do
-      local available_out = ffi_new("size_t[1]", kFileBufferSize)
+      local available_out = ffi_new("size_t[1]", bufsize)
       local next_out = ffi_new("uint8_t*[1]", buffer)
       local total_out = ffi_new("size_t[1]", 0)
       ret = decoder.BrotliDecoderDecompressStream(s,
                                                   available_in, next_in,
                                                   available_out, next_out,
                                                   total_out)
-      local used_out = kFileBufferSize - available_out[0]
+      local used_out = bufsize - available_out[0]
       if used_out ~= 0 then
          decoded_buffer[#decoded_buffer+1] = ffi_str(buffer, used_out)
       end
