@@ -98,7 +98,7 @@ local BROTLI_DEFAULT_QUALITY = 11
 local BROTLI_DEFAULT_WINDOW = 22
 local BROTLI_DEFAULT_MODE = C.BROTLI_MODE_GENERIC
 
-local kFileBufferSize = 65536
+local _BUFFER_SIZE = 65536
 
 
 local function compress (input, options)
@@ -127,7 +127,7 @@ end
 
 
 local function compressStream (str, options, bufsize)
-   local bufsize = bufsize or kFileBufferSize
+   local bufsize = bufsize or _BUFFER_SIZE
    local lgwin = BROTLI_DEFAULT_WINDOW
    local quality = BROTLI_DEFAULT_QUALITY
    local mode = BROTLI_DEFAULT_MODE
@@ -215,7 +215,7 @@ _M.compress = compressStream
 
 
 local function decompress (encoded_buffer, bufsize)
-   local bufsize = bufsize or kFileBufferSize
+   local bufsize = bufsize or _BUFFER_SIZE
    local s = decoder.BrotliDecoderCreateInstance(nil, nil, nil)
    if not s then
       return nil, "out of memory: cannot create decoder instance"
