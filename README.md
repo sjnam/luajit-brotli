@@ -42,22 +42,21 @@ location / {
         ngx.ctx.accept_br = false
         local header = ngx.var.http_accept_encoding
         if header then
-           local m, err = ngx.re.match(header, "[\\s,]?br[\\s,]?")
-           if m then
+           if string.find(header, "br") then
               ngx.ctx.accept_br = true
            end
         end
         ngx.req.set_uri(ngx.var.uri..".br")
     }
     
-    header_filter_by_lua_block{
+    header_filter_by_lua_block {
         ngx.header.Content_Encoding = "br"
         if not ngx.ctx.accept_br then
            ngx.header.Content_Length = nil
         end
     }
     
-    body_filter_by_lua_block{
+    body_filter_by_lua_block {
         local brotli = require "resty.brotli"
         if not ngx.ctx.accept_br then
            ngx.arg[1] = brotli.decompress(ngx.arg[1])
