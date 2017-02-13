@@ -51,11 +51,13 @@ location / {
         end
         ngx.req.set_uri(uri..".br")
     }
-    
+
     header_filter_by_lua_block {
-        ngx.header.Content_Encoding = "br"
+        ngx.header["Vary"] = "Accept-Encoding"                
         if not ngx.ctx.accept_br then
-           ngx.header.Content_Length = nil
+           ngx.header.content_length = nil
+        else
+           ngx.header["Content-Encoding"] = "br"
         end
     }
     
