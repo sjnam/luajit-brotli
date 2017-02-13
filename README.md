@@ -32,6 +32,7 @@ assert(txt == txt2)
 
 in openresty
 ```` lua
+# static contents
 location / {
     root   html;
     default_type  text/html;
@@ -65,6 +66,41 @@ location / {
         local brotli = require "resty.brotli"
         if not ngx.ctx.accept_br then
            ngx.arg[1] = brotli.decompress(ngx.arg[1])
+        end
+    }
+}
+
+# dynamic contents
+location /hello {
+    default_type     text/plain;
+    
+    content_by_lua_block {
+        local name = ngx.var.arg_name or "world"
+        local msg = "Hello, "..name.."\n"
+        msg = string.rep(msg, 10)
+        ngx.header.content_length = #msg 
+        ngx.print(msg)
+    }
+
+    header_filter_by_lua_block {
+        ngx.ctx.accept_br = false
+        local header = ngx.var.http_accept_encoding
+        if header then
+           if string.find(header, "br") then
+              ngx.ctx.accept_br = true
+           end
+        end
+        if ngx.ctx.accept_br then
+           ngx.header.content_length = nil
+           ngx.header["Content-Encoding"] = "br"
+        end
+        ngx.header["Vary"] = "Accept-Encoding"                
+    }
+
+    body_filter_by_lua_block {
+        local brotli = require "resty.brotli"
+        if ngx.ctx.accept_br then
+           ngx.arg[1] = brotli.compress(ngx.arg[1])
         end
     }
 }
