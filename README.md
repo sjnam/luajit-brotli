@@ -22,7 +22,6 @@ Example
 =======
 ```` lua
 local brotli = require "resty.brotli"
-
 local txt = string.rep("ABCD", 1000)
 print("Uncompressed size:", #txt)
 local c, err = brotli.compress(txt)
@@ -31,11 +30,10 @@ local txt2, err = brotli.decompress(c)
 assert(txt == txt2)
 ````
 
-nginx.conf of Openresty
+in openresty
 ```` lua
 location / {
     root   html;
-    index  index.html index.htm;
     default_type  text/html;
 
     rewrite_by_lua_block {
@@ -46,7 +44,12 @@ location / {
               ngx.ctx.accept_br = true
            end
         end
-        ngx.req.set_uri(ngx.var.uri..".br")
+
+        local uri = ngx.var.uri
+        if uri == "/" then
+           uri = "/index.html"
+        end
+        ngx.req.set_uri(uri..".br")
     }
     
     header_filter_by_lua_block {
