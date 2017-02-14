@@ -123,7 +123,7 @@ local function compress (input, options)
    
    return ffi_str(encoded_buffer, encoded_size[0])
 end
---_M.compress = compress
+_M.compress = compress
 
 
 local function compressStream (str, options, bufsize)
@@ -211,7 +211,7 @@ local function compressStream (str, options, bufsize)
    
    return nil, "fail to compress"
 end
-_M.compress = compressStream
+_M.compressStream = compressStream
 
 
 local function decompress (encoded_buffer, bufsize)
