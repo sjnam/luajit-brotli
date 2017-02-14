@@ -162,9 +162,9 @@ local function compressStream (str, options, bufsize)
    
    local res = {}
    local len = #str
-   local buff = ffi.new("char[?]", len, str)
+   local buff = ffi_new("uint8_t[?]", len, str)
    local p = buff
-
+   
    while true do
       if available_in[0] == 0 and not is_eof then
          local read_size = bufsize
