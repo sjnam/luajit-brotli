@@ -231,11 +231,10 @@ local function decompress (encoded_buffer, bufsize)
    while ret == C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT do
       local available_out = ffi_new("size_t[1]", bufsize)
       local next_out = ffi_new("uint8_t*[1]", buffer)
-      local total_out = ffi_new("size_t[1]", 0)
       ret = decoder.BrotliDecoderDecompressStream(s,
                                                   available_in, next_in,
                                                   available_out, next_out,
-                                                  total_out)
+                                                  nil)
       local used_out = bufsize - available_out[0]
       if used_out ~= 0 then
          decoded_buffer[#decoded_buffer+1] = ffi_str(buffer, used_out)
