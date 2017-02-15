@@ -128,7 +128,25 @@ Methods
 
 createEncoder
 -----------
-`syntax: encoder = brotli.createEncoder()`
+`syntax: encoder = brotli.createEncoder(options?)`
+
+The `options` argument is a Lua table holding the following keys:
+
+* `quality`
+
+    Set Brotli quality (compression) level.
+    Acceptable values are in the range from `0` to `11`.
+    (Defaults to 11)
+
+* `lgwin`
+
+    Set Brotli window size. Window size is `(1 << lgwin) - 16`.
+
+* `mode`
+
+    The compression mode can be `BROTLI_MODE_GENERIC` (0, default),
+   `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
+   `BROTLI_MODE_FONT` (2, for WOFF 2.0).
 
 Creates an instance of BrotliEncoderState and initializes it.
 
