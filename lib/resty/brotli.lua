@@ -228,11 +228,9 @@ local function _compressStream (state, str)
          next_out[0] = output
       end
 
-      --[[
-      if encoder.BrotliEncoderIsFinished(state) == 1 then
+      if encoder.BrotliEncoderIsFinished(state) == BROTLI_TRUE then
          break
       end
-      --]]
    end
 
    ffi_gc(buff, free)
@@ -313,13 +311,19 @@ _M.decompressStream = _decompressStream
 local function _destroyEncoder (state)
    encoder.BrotliEncoderDestroyInstance(state)
 end
-_M.destroyEncoder = _destoryEncoder
+_M.destroyEncoder = _destroyEncoder
 
 
 local function _destroyDecoder (state)
    decoder.BrotliDecoderDestroyInstance(state)
 end
 _M.destroyDecoder = _destroyDecoder
+
+
+local function _encoderIsFinished (state)
+   return encoder.BrotliEncoderIsFinished(state) == BROTLI_TRUE
+end
+_M.encoderIsFinished = _encoderIsFinished
 
 
 return _M

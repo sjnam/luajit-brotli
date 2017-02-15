@@ -76,6 +76,51 @@ location / {
        end
     }
 }
+
+# dynamic contents
+location /hello {
+    content_by_lua_block {
+        local name = ngx.var.arg_name or "world"
+        local msg = string.rep("Hello,"..name.." ", 100)
+        msg = string.rep(msg.."\n", 10000)
+        ngx.header["Content-Length"] = #msg 
+        ngx.print(msg)
+    }
+
+    header_filter_by_lua_block {
+        local brotli = require "resty.brotli"
+        local brotli_ok = false
+        local header = ngx.var.http_accept_encoding
+        if header then
+           if string.find(header, "br") then
+              brotli_ok = true
+           end
+        end
+        ngx.ctx.bro_ok = brotli_ok
+        ngx.header["Vary"] = "Accept-Encoding"
+        if brotli_ok then
+           ngx.header.content_length = nil
+           ngx.header["Content-Encoding"] = "br"
+           ngx.ctx.bro_encoder = brotli.createEncoder()
+        end
+    }
+
+    body_filter_by_lua_block {
+        if not ngx.ctx.bro_ok then
+           return
+        end                
+        local brotli = require "resty.brotli"
+        local encoder = ngx.ctx.bro_encoder
+        ngx.arg[1] = brotli.compressStream(encoder, ngx.arg[1])
+        
+        if brotli.encoderIsFinished(encoder) then
+           brotli.destroyEncoder(encoder)
+           ngx.arg[2] = true
+        else
+           ngx.ctx.bro_encoder = encoder
+        end
+    }
+}
 ````
 
 Methods
@@ -104,6 +149,12 @@ destroyDecoder
 `syntax: brotli.destroyDecoder()`
 
 Deinitializes and frees BrotliDecoderState instance.
+
+encoderIsFinished
+-----------------
+`syntax: isfinished = brotli.encoderIsFinished(encoder)`
+
+Checks if encoder instance reached the final state.
 
 compress
 --------
