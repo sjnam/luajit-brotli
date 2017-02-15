@@ -78,6 +78,30 @@ location / {
 Methods
 =======
 
+createEncoder
+-----------
+`syntax: encoder = brotli.createEncoder()`
+
+Creates an instance of BrotliEncoderState and initializes it.
+
+createDecoder
+-------------
+`syntax: decoder = brotli.createDecoder()`
+
+Creates an instance of BrotliDecoderState and initializes it.
+
+destroyEncoder
+--------------
+`syntax: brotli.destroyEncoder()`
+
+Deinitializes and frees BrotliEncoderState instance.
+
+destroyDecoder
+--------------
+`syntax: brotli.destroyDecoder()`
+
+Deinitializes and frees BrotliDecoderState instance.
+
 compress
 --------
 `syntax: encoded_buffer, err = brotli.compress(input_buffer, options?)`
@@ -107,4 +131,11 @@ decompress
 `syntax: decoded_buffer, err = brotli.decompress(encoded_buffer)`
 
 Decompresses the data in encoded_buffer into decoded_buffer.
+
+decompressStream
+----------------
+`syntax: ret, buffer = brotli.decompressStream(decoder, encoded_buffer)`
+
+Decompresses the data in encoded_buffer into buffer stream
+
 

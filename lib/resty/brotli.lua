@@ -116,7 +116,7 @@ _M.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT = C.BROTLI_DECODER_RESULT_NEEDS_MORE_I
 _M.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
 
 
-local function _get_encoder (options)
+local function _createEncoder (options)
    local lgwin = BROTLI_DEFAULT_WINDOW
    local quality = BROTLI_DEFAULT_QUALITY
    local mode = BROTLI_DEFAULT_MODE
@@ -136,17 +136,17 @@ local function _get_encoder (options)
 
    return state
 end
-_M.get_encoder = _get_encoder
+_M.createEncoder = _createEncoder
 
 
-local function _get_decoder ()
+local function _createDecoder ()
    local state = decoder.BrotliDecoderCreateInstance(nil, nil, nil)
    if not state then
       return nil, "out of memory: cannot create decoder instance"
    end
    return state
 end
-_M.get_decoder = _get_decoder
+_M.createDecoder = _createDecoder
 
 
 local function _compress (input, options)
