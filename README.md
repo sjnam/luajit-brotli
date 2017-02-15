@@ -180,6 +180,12 @@ The `options` argument is a Lua table holding the following keys:
    `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
    `BROTLI_MODE_FONT` (2, for WOFF 2.0).
 
+compressStream
+--------------
+`syntax: buffer = brotli.compressStream(encoder, stream)`
+
+Compresses input stream to output buffer.
+
 decompress
 ----------
 `syntax: decoded_buffer, err = brotli.decompress(encoded_buffer)`
