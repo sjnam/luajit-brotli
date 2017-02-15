@@ -168,15 +168,17 @@ function _M.new (self, options)
 end
 
 
-function _M.compress (self, input)
-   local options = self.options
+function _M.compress (self, input, options)
+   local options = options or {}
+   local quality = options.quality or self.options.quality
+   local lgwin = options.lgwin or self.options.lgwin
+   local mode = options.mode or self.options.mode
    local input_size = #input
    local n = brotlienc.BrotliEncoderMaxCompressedSize(input_size)
    local encoded_size = ffi_new(ptr_size_t, n)
    local encoded_buffer = ffi_new(arr_utint8_t, n)
    local ret = brotlienc.BrotliEncoderCompress(
-      options.quality, options.lgwin, options.mode,
-      input_size, input, encoded_size, encoded_buffer)
+      quality, lgwin, mode, input_size, input, encoded_size, encoded_buffer)
 
    assert(ret == BROTLI_TRUE)
    
@@ -255,7 +257,7 @@ end
 
 
 function _M.decompress (self, encoded_buffer, bufsize)
-   local decoder = self.decoder
+   local decoder = _createDecoder()
    local bufsize = bufsize or _BUFFER_SIZE
 
    local available_in = ffi_new(ptr_size_t, #encoded_buffer)
