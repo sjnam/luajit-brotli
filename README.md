@@ -30,7 +30,7 @@ local txt2, err = brotli.decompress(c)
 assert(txt == txt2)
 ````
 
-in openresty
+in nginx with lua-nginx-module of Openresty
 ```` lua
 # static contents
 location / {
@@ -43,33 +43,38 @@ location / {
              brotli_ok = true
           end
        end
-       if not brotli_ok == true then
-          ngx.ctx.bro_ok = brotli_ok
+       if not brotli_ok then
           ngx.ctx.bro_decoder = brotli.get_decoder()
        end
+       ngx.ctx.bro_ok = brotli_ok       
        ngx.req.set_uri(ngx.var.uri..".br")    
     }
 
     header_filter_by_lua_block {
-        ngx.header["Vary"] = "Accept-Encoding"                
-        if not ngx.ctx.accept_br then
-           ngx.header.content_length = nil
-        else
-           ngx.header["Content-Encoding"] = "br"
-        end
+       ngx.header["Vary"] = "Accept-Encoding"                
+       if not ngx.ctx.bro_ok then
+          ngx.header.content_length = nil
+       else
+          ngx.header["Content-Encoding"] = "br"
+       end
     }
     
     body_filter_by_lua_block {
+       if ngx.ctx.bro_ok then
+          return
+       end
+    
        local brotli = require "resty.brotli"
-       local decoder = ngx.ctx.bro_decoder
-       local ret, stream = brotli.decompressStream(decoder, ngx.arg[1])
-
-       ngx.arg[1] = stream
-       if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
-          brotli.destroyDecoder(decoder)
-          ngx.arg[2] = true
-       else
-          ngx.ctx.bro_decoder = decoder
+       if not ngx.ctx.bro_ok then
+          local decoder = ngx.ctx.bro_decoder
+          local ret, stream = brotli.decompressStream(decoder, ngx.arg[1])
+          ngx.arg[1] = stream
+          if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
+             brotli.destroyDecoder(decoder)
+             ngx.arg[2] = true
+          else
+             ngx.ctx.bro_decoder = decoder
+          end
        end
     }
 }
