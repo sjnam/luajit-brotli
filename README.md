@@ -34,23 +34,20 @@ in openresty
 ```` lua
 # static contents
 location / {
-    root   html;
-    default_type  text/html;
-
     rewrite_by_lua_block {
-        ngx.ctx.accept_br = false
-        local header = ngx.var.http_accept_encoding
-        if header then
-           if string.find(header, "br") then
-              ngx.ctx.accept_br = true
-           end
-        end
-
-        local uri = ngx.var.uri
-        if uri == "/" then
-           uri = "/index.html"
-        end
-        ngx.req.set_uri(uri..".br")
+       local brotli = require "resty.brotli"
+       local brotli_ok = false
+       local header = ngx.var.http_accept_encoding
+       if header then
+          if string.find(header, "br") then
+             brotli_ok = true
+          end
+       end
+       if not brotli_ok == true then
+          ngx.ctx.bro_ok = brotli_ok
+          ngx.ctx.bro_decoder = brotli.get_decoder()
+       end
+       ngx.req.set_uri(ngx.var.uri..".br")    
     }
 
     header_filter_by_lua_block {
@@ -63,45 +60,17 @@ location / {
     }
     
     body_filter_by_lua_block {
-        local brotli = require "resty.brotli"
-        if not ngx.ctx.accept_br then
-           ngx.arg[1] = brotli.decompress(ngx.arg[1])
-        end
-    }
-}
+       local brotli = require "resty.brotli"
+       local decoder = ngx.ctx.bro_decoder
+       local ret, stream = brotli.decompressStream(decoder, ngx.arg[1])
 
-# dynamic contents
-location /hello {
-    default_type     text/plain;
-    
-    content_by_lua_block {
-        local name = ngx.var.arg_name or "world"
-        local msg = "Hello, "..name.."\n"
-        msg = string.rep(msg, 10)
-        ngx.header.content_length = #msg 
-        ngx.print(msg)
-    }
-
-    header_filter_by_lua_block {
-        ngx.ctx.accept_br = false
-        local header = ngx.var.http_accept_encoding
-        if header then
-           if string.find(header, "br") then
-              ngx.ctx.accept_br = true
-           end
-        end
-        if ngx.ctx.accept_br then
-           ngx.header.content_length = nil
-           ngx.header["Content-Encoding"] = "br"
-        end
-        ngx.header["Vary"] = "Accept-Encoding"                
-    }
-
-    body_filter_by_lua_block {
-        local brotli = require "resty.brotli"
-        if ngx.ctx.accept_br then
-           ngx.arg[1] = brotli.compress(ngx.arg[1])
-        end
+       ngx.arg[1] = stream
+       if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
+          brotli.destroyDecoder(decoder)
+          ngx.arg[2] = true
+       else
+          ngx.ctx.bro_decoder = decoder
+       end
     }
 }
 ````

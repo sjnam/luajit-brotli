@@ -110,7 +110,46 @@ local BROTLI_DEFAULT_MODE = C.BROTLI_MODE_GENERIC
 local _BUFFER_SIZE = 65536
 
 
-local function compress (input, options)
+_M.BROTLI_DECODER_RESULT_ERROR = C.BROTLI_DECODER_RESULT_ERROR
+_M.BROTLI_DECODER_RESULT_SUCCESS = C.BROTLI_DECODER_RESULT_SUCCESS
+_M.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT = C.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT
+_M.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
+
+
+local function _get_encoder (options)
+   local lgwin = BROTLI_DEFAULT_WINDOW
+   local quality = BROTLI_DEFAULT_QUALITY
+   local mode = BROTLI_DEFAULT_MODE
+   if options then
+      lgwin = options.lgwin or lgwin
+      quality = options.quality or quality
+      mode = options.mode or mode
+   end
+   
+   local state = encoder.BrotliEncoderCreateInstance(nil, nil, nil)
+   if not state then
+      return nil, "out of memory: cannot create encoder instance"
+   end
+   
+   encoder.BrotliEncoderSetParameter(state, C.BROTLI_PARAM_QUALITY, quality)
+   encoder.BrotliEncoderSetParameter(state, C.BROTLI_PARAM_LGWIN, lgwin)
+
+   return state
+end
+_M.get_encoder = _get_encoder
+
+
+local function _get_decoder ()
+   local state = decoder.BrotliDecoderCreateInstance(nil, nil, nil)
+   if not state then
+      return nil, "out of memory: cannot create decoder instance"
+   end
+   return state
+end
+_M.get_decoder = _get_decoder
+
+
+local function _compress (input, options)
    local lgwin = BROTLI_DEFAULT_WINDOW
    local quality = BROTLI_DEFAULT_QUALITY
    local mode = BROTLI_DEFAULT_MODE
@@ -132,27 +171,11 @@ local function compress (input, options)
    
    return ffi_str(encoded_buffer, encoded_size[0])
 end
-_M.compress = compress
+_M.compress = _compress
 
 
-local function compressStream (str, options, bufsize)
-   local bufsize = bufsize or _BUFFER_SIZE
-   local lgwin = BROTLI_DEFAULT_WINDOW
-   local quality = BROTLI_DEFAULT_QUALITY
-   local mode = BROTLI_DEFAULT_MODE
-   if options then
-      lgwin = options.lgwin or lgwin
-      quality = options.quality or quality
-      mode = options.mode or mode
-   end
-
-   local s = encoder.BrotliEncoderCreateInstance(nil, nil, nil)
-   if not s then
-      return nil, "out of memory: cannot create encoder instance"
-   end
-   
-   encoder.BrotliEncoderSetParameter(s, C.BROTLI_PARAM_QUALITY, quality)
-   encoder.BrotliEncoderSetParameter(s, C.BROTLI_PARAM_LGWIN, lgwin)
+local function _compressStream (state, str)
+   local bufsize = _BUFFER_SIZE
 
    local buffer = ffi_new(arr_utint8_t, bufsize*2)
    if not buffer then
@@ -189,7 +212,7 @@ local function compressStream (str, options, bufsize)
       end
       
       if encoder.BrotliEncoderCompressStream(
-         s,
+         state,
          is_eof and C.BROTLI_OPERATION_FINISH or C.BROTLI_OPERATION_PROCESS,
          available_in, next_in, available_out, next_out, nil) == BROTLI_FALSE
       then
@@ -204,15 +227,17 @@ local function compressStream (str, options, bufsize)
          available_out[0] = bufsize
          next_out[0] = output
       end
-      
-      if encoder.BrotliEncoderIsFinished(s) == 1 then
+
+      --[[
+      if encoder.BrotliEncoderIsFinished(state) == 1 then
          break
       end
+      --]]
    end
 
    ffi_gc(buff, free)
    ffi_gc(buffer, free)
-   encoder.BrotliEncoderDestroyInstance(s)
+   --encoder.BrotliEncoderDestroyInstance(state)
 
    if is_ok then
       return tab_concat(res)
@@ -220,10 +245,10 @@ local function compressStream (str, options, bufsize)
    
    return nil, "fail to compress"
 end
-_M.compressStream = compressStream
+_M.compressStream = _compressStream
 
 
-local function decompress (encoded_buffer, bufsize)
+local function _decompress (encoded_buffer, bufsize)
    local bufsize = bufsize or _BUFFER_SIZE
    local s = decoder.BrotliDecoderCreateInstance(nil, nil, nil)
    if not s then
@@ -255,7 +280,46 @@ local function decompress (encoded_buffer, bufsize)
    
    return tab_concat(decoded_buffer)
 end
-_M.decompress = decompress
+_M.decompress = _decompress
+
+
+local function _decompressStream (state, encoded_buffer)
+   local bufsize = _BUFFER_SIZE
+   local available_in = ffi_new(ptr_size_t, #encoded_buffer)
+   local next_in = ffi_new(pptr_const_utint8_t)
+   next_in[0] = encoded_buffer
+   local buffer = ffi_new(arr_utint8_t, bufsize)
+
+   local decoded_buffer = {}
+   local ret = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
+   while ret == C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT do
+      local available_out = ffi_new(ptr_size_t, bufsize)
+      local next_out = ffi_new(pptr_utint8_t, buffer)
+      ret = decoder.BrotliDecoderDecompressStream(state,
+                                                  available_in, next_in,
+                                                  available_out, next_out,
+                                                  nil)
+      local used_out = bufsize - available_out[0]
+      if used_out ~= 0 then
+         decoded_buffer[#decoded_buffer+1] = ffi_str(buffer, used_out)
+      end
+   end
+   
+   return ret, tab_concat(decoded_buffer)
+end
+_M.decompressStream = _decompressStream
+
+
+local function _destroyEncoder (state)
+   encoder.BrotliEncoderDestroyInstance(state)
+end
+_M.destroyEncoder = _destoryEncoder
+
+
+local function _destroyDecoder (state)
+   decoder.BrotliDecoderDestroyInstance(state)
+end
+_M.destroyDecoder = _destroyDecoder
 
 
 return _M
