@@ -65,16 +65,14 @@ location / {
        end
     
        local brotli = require "resty.brotli"
-       if not ngx.ctx.bro_ok then
-          local decoder = ngx.ctx.bro_decoder
-          local ret, stream = brotli.decompressStream(decoder, ngx.arg[1])
-          ngx.arg[1] = stream
-          if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
-             brotli.destroyDecoder(decoder)
-             ngx.arg[2] = true
-          else
-             ngx.ctx.bro_decoder = decoder
-          end
+       local decoder = ngx.ctx.bro_decoder
+       local ret, stream = brotli.decompressStream(decoder, ngx.arg[1])
+       ngx.arg[1] = stream
+       if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
+          brotli.destroyDecoder(decoder)
+          ngx.arg[2] = true
+       else
+          ngx.ctx.bro_decoder = decoder
        end
     }
 }
