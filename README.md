@@ -22,11 +22,12 @@ Example
 =======
 ```` lua
 local brotli = require "resty.brotli"
+local bro = brotli:new()
 local txt = string.rep("ABCD", 1000)
 print("Uncompressed size:", #txt)
-local c, err = brotli.compress(txt)
+local c, err = bro:compress(txt)
 print("Compressed size:", #c)
-local txt2, err = brotli.decompress(c)
+local txt2, err = bro:decompress(c)
 assert(txt == txt2)
 ````
 
@@ -44,7 +45,7 @@ location / {
           end
        end
        if not brotli_ok then
-          ngx.ctx.bro_decoder = brotli.get_decoder()
+          ngx.ctx.bro = brotli:new()
        end
        ngx.ctx.bro_ok = brotli_ok       
        ngx.req.set_uri(ngx.var.uri..".br")    
@@ -65,14 +66,14 @@ location / {
        end
     
        local brotli = require "resty.brotli"
-       local decoder = ngx.ctx.bro_decoder
-       local ret, stream = brotli.decompressStream(decoder, ngx.arg[1])
+       local bro = ngx.ctx.bro
+       local ret, stream = bro:decompressStream(ngx.arg[1])
        ngx.arg[1] = stream
        if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
-          brotli.destroyDecoder(decoder)
+          bro:destroyDecoder()
           ngx.arg[2] = true
        else
-          ngx.ctx.bro_decoder = decoder
+          ngx.ctx.bro = bro
        end
     }
 }
@@ -101,7 +102,7 @@ location /hello {
         if brotli_ok then
            ngx.header.content_length = nil
            ngx.header["Content-Encoding"] = "br"
-           ngx.ctx.bro_encoder = brotli.createEncoder()
+           ngx.ctx.bro = brotli:new()
         end
     }
 
@@ -110,25 +111,27 @@ location /hello {
            return
         end                
         local brotli = require "resty.brotli"
-        local encoder = ngx.ctx.bro_encoder
-        ngx.arg[1] = brotli.compressStream(encoder, ngx.arg[1])
+        local bro = ngx.ctx.bro
+        ngx.arg[1] = bro:compressStream(ngx.arg[1])
         
-        if brotli.encoderIsFinished(encoder) then
-           brotli.destroyEncoder(encoder)
+        if bro:encoderIsFinished() then
+           bro:destroyEncoder()
            ngx.arg[2] = true
         else
-           ngx.ctx.bro_encoder = encoder
+           ngx.ctx.bro = bro
         end
     }
-}
+}  
 ````
 
 Methods
 =======
 
-createEncoder
------------
-`syntax: encoder = brotli.createEncoder(options?)`
+new
+---
+`syntax: bro, err = brotli:new(options?)`
+
+Create brotli encoder and decoder.
 
 The `options` argument is a Lua table holding the following keys:
 
@@ -147,73 +150,45 @@ The `options` argument is a Lua table holding the following keys:
     The compression mode can be `BROTLI_MODE_GENERIC` (0, default),
    `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
    `BROTLI_MODE_FONT` (2, for WOFF 2.0).
-
-Creates an instance of BrotliEncoderState and initializes it.
-
-createDecoder
--------------
-`syntax: decoder = brotli.createDecoder()`
-
-Creates an instance of BrotliDecoderState and initializes it.
-
-destroyEncoder
---------------
-`syntax: brotli.destroyEncoder()`
-
-Deinitializes and frees BrotliEncoderState instance.
-
-destroyDecoder
---------------
-`syntax: brotli.destroyDecoder()`
-
-Deinitializes and frees BrotliDecoderState instance.
-
-encoderIsFinished
------------------
-`syntax: isfinished = brotli.encoderIsFinished(encoder)`
-
-Checks if encoder instance reached the final state.
 
 compress
 --------
-`syntax: encoded_buffer, err = brotli.compress(input_buffer, options?)`
+`syntax: encoded_buffer, err = bro:compress(input_buffer)`
 
 Compresses the data in input_buffer into encoded_buffer.
 
-The `options` argument is a Lua table holding the following keys:
-
-* `quality`
-
-    Set Brotli quality (compression) level.
-    Acceptable values are in the range from `0` to `11`.
-    (Defaults to 11)
-
-* `lgwin`
-
-    Set Brotli window size. Window size is `(1 << lgwin) - 16`.
-
-* `mode`
-
-    The compression mode can be `BROTLI_MODE_GENERIC` (0, default),
-   `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
-   `BROTLI_MODE_FONT` (2, for WOFF 2.0).
-
 compressStream
 --------------
-`syntax: buffer = brotli.compressStream(encoder, stream)`
+`syntax: buffer = bro:compressStream(stream)`
 
 Compresses input stream to output buffer.
 
 decompress
 ----------
-`syntax: decoded_buffer, err = brotli.decompress(encoded_buffer)`
+`syntax: decoded_buffer, err = bro:decompress(encoded_buffer)`
 
 Decompresses the data in encoded_buffer into decoded_buffer.
 
 decompressStream
 ----------------
-`syntax: ret, buffer = brotli.decompressStream(decoder, encoded_buffer)`
+`syntax: ret, buffer = bro:decompressStream(encoded_buffer)`
 
 Decompresses the data in encoded_buffer into buffer stream
 
+destroyEncoder
+--------------
+`syntax: bro:destroyEncoder()`
 
+Deinitializes and frees BrotliEncoderState instance.
+
+destroyDecoder
+--------------
+`syntax: bro:destroyDecoder()`
+
+Deinitializes and frees BrotliDecoderState instance.
+
+encoderIsFinished
+-----------------
+`syntax: isfinished = bro:encoderIsFinished()`
+
+Checks if encoder instance reached the final state.
