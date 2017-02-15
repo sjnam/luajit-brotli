@@ -1,16 +1,19 @@
 local ffi = require "ffi"
 
+local C = ffi.C
+local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_load = ffi.load
 local ffi_copy = ffi.copy
 local ffi_str = ffi.string
-local ffi_gc = ffi.gc
-local C = ffi.C
+local ffi_typeof = ffi.typeof
+
 local assert = assert
 local tab_concat = table.concat
 local tab_insert = table.insert
 
-local _M = { _VERSION = '0.01' }
+
+local _M = { _VERSION = '0.10' }
 
 
 ffi.cdef[[
@@ -87,6 +90,12 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
 ]]
 
 
+local arr_utint8_t = ffi_typeof("uint8_t[?]")
+local pptr_utint8_t = ffi_typeof("uint8_t*[1]")
+local pptr_const_utint8_t = ffi_typeof("const uint8_t*[1]")
+local ptr_size_t = ffi_typeof("size_t[1]")
+
+
 local encoder = ffi_load("brotlienc")
 local decoder = ffi_load("brotlidec")
 
@@ -113,8 +122,8 @@ local function compress (input, options)
 
    local input_size = #input
    local n = encoder.BrotliEncoderMaxCompressedSize(input_size)
-   local encoded_size = ffi_new("size_t[1]", n)
-   local encoded_buffer = ffi_new("uint8_t[?]", n)
+   local encoded_size = ffi_new(ptr_size_t, n)
+   local encoded_buffer = ffi_new(arr_utint8_t, n)
    local ret = encoder.BrotliEncoderCompress(
       quality, lgwin, mode,
       input_size, input, encoded_size, encoded_buffer)
@@ -145,24 +154,24 @@ local function compressStream (str, options, bufsize)
    encoder.BrotliEncoderSetParameter(s, C.BROTLI_PARAM_QUALITY, quality)
    encoder.BrotliEncoderSetParameter(s, C.BROTLI_PARAM_LGWIN, lgwin)
 
-   local buffer = ffi_new("uint8_t[?]", bufsize*2)
+   local buffer = ffi_new(arr_utint8_t, bufsize*2)
    if not buffer then
       return nil, "out of memory"
    end
 
    local input = buffer
    local output = buffer + bufsize
-   local available_in = ffi_new("size_t[1]", 0)
-   local available_out = ffi_new("size_t[1]", bufsize)
-   local next_in = ffi_new("const uint8_t*[1]")
-   local next_out = ffi_new("uint8_t*[1]")
+   local available_in = ffi_new(ptr_size_t, 0)
+   local available_out = ffi_new(ptr_size_t, bufsize)
+   local next_in = ffi_new(pptr_const_utint8_t)
+   local next_out = ffi_new(pptr_utint8_t)
    next_out[0] = output
    local is_ok = true
    local is_eof = false
    
    local res = {}
    local len = #str
-   local buff = ffi_new("uint8_t[?]", len, str)
+   local buff = ffi_new(arr_utint8_t, len, str)
    local p = buff
    
    while true do
@@ -221,16 +230,16 @@ local function decompress (encoded_buffer, bufsize)
       return nil, "out of memory: cannot create decoder instance"
    end
 
-   local available_in = ffi_new("size_t[1]", #encoded_buffer)
-   local next_in = ffi_new("const uint8_t*[1]")
+   local available_in = ffi_new(ptr_size_t, #encoded_buffer)
+   local next_in = ffi_new(pptr_const_utint8_t)
    next_in[0] = encoded_buffer
-   local buffer = ffi_new("uint8_t[?]", bufsize)
+   local buffer = ffi_new(arr_utint8_t, bufsize)
 
    local decoded_buffer = {}
    local ret = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
    while ret == C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT do
-      local available_out = ffi_new("size_t[1]", bufsize)
-      local next_out = ffi_new("uint8_t*[1]", buffer)
+      local available_out = ffi_new(ptr_size_t, bufsize)
+      local next_out = ffi_new(pptr_utint8_t, buffer)
       ret = decoder.BrotliDecoderDecompressStream(s,
                                                   available_in, next_in,
                                                   available_out, next_out,
@@ -250,4 +259,3 @@ _M.decompress = decompress
 
 
 return _M
-
