@@ -18,11 +18,11 @@ Then you can install `lua-resty-brotli` by placing `lib/resty/brotli.lua` to
 your lua library path.
 
 
-Example
-=======
+Synopsis
+========
 
 * Simple usage
-```` lua
+```lua
 local brotlienc = require "resty.brotli.encoder"
 local brotlidec = require "resty.brotli.decoder"
 
@@ -35,14 +35,14 @@ local c, err = encoder:compress(txt)
 print("Compressed size:", #c)
 local txt2, err = decoder:decompress(c)
 assert(txt == txt2)
-````
+```
 
 * In nginx with lua-nginx-module
 
   The following sample nginx.conf, the document root directory, `html/brotli`
 has only precompressed files with the ".br" filename extension instead of
 reqular files.
-```` lua
+```nginx
 # static contents
 location /brotli {
     root html;
@@ -86,10 +86,10 @@ location /brotli {
        end
     }
 }
-````
+```
 
 * Compressing on the fly for dynamic contents
-```` lua
+```nginx
 # dynamic contents
 location /hello {
     content_by_lua_block {
@@ -130,7 +130,7 @@ location /hello {
         end
     }
 }
-````
+```
 
 Methods
 =======
