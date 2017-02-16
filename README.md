@@ -135,6 +135,7 @@ Methods
 new
 ---
 `syntax: encoder, err = brotlienc:new(options?)`
+
 `syntax: decoder, err = brotlidec:new()`
 
 Create brotli encoder and decoder.
@@ -158,17 +159,15 @@ The `options` argument is a Lua table holding the following keys:
    `BROTLI_MODE_FONT` (2, for WOFF 2.0).
 
 
-destroy, encoder
---------------
-`syntax: encoder:destroy()`
+destroy
+-------
+* `syntax: encoder:destroy()`
 
-Deinitializes and frees BrotliEncoderState instance.
+    Deinitializes and frees BrotliEncoderState instance.
 
-destroy, decoder
---------------
-`syntax: decoder:destroy()`
+* `syntax: decoder:destroy()`
 
-Deinitializes and frees BrotliDecoderState instance.
+    Deinitializes and frees BrotliDecoderState instance.
 
 
 compress
