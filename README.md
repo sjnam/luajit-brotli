@@ -21,7 +21,7 @@ your lua library path.
 Example
 =======
 
-Simple usage
+* Simple usage
 ```` lua
 local brotlienc = require "resty.brotli.encoder"
 local brotlidec = require "resty.brotli.decoder"
@@ -37,9 +37,9 @@ local txt2, err = decoder:decompress(c)
 assert(txt == txt2)
 ````
 
-In nginx with lua-nginx-module
+* In nginx with lua-nginx-module
 
-The following sample nginx.conf, the document root directory, `html/brotli`
+  The following sample nginx.conf, the document root directory, `html/brotli`
 has only precompressed files with the ".br" filename extension instead of
 reqular files.
 ```` lua
@@ -86,7 +86,10 @@ location /brotli {
        end
     }
 }
+````
 
+* Compressing on the fly for dynamic contents
+```` lua
 # dynamic contents
 location /hello {
     content_by_lua_block {
