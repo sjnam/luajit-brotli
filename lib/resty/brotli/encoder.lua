@@ -76,7 +76,7 @@ uint32_t BrotliEncoderVersion(void);
 ]]
 
 
-local _M = { _VERSION = '0.20' }
+local _M = { _VERSION = '0.2.0' }
 
 
 local mt = { __index = _M }
