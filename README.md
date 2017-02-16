@@ -38,9 +38,15 @@ assert(txt == txt2)
 ````
 
 In nginx with lua-nginx-module
+
+The following sample nginx.conf, the document root directory, `html/brotli`
+has only precompressed files with the ".br" filename extension instead of
+reqular files.
 ```` lua
 # static contents
-location / {
+location /brotli {
+    root html;
+    
     rewrite_by_lua_block {
        local brotlidec = require "resty.brotli.decoder"
        local brotli_ok = false
