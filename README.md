@@ -20,23 +20,29 @@ your lua library path.
 
 Example
 =======
+
+Simple usage
 ```` lua
-local brotli = require "resty.brotli"
-local bro = brotli:new()
+local brotlienc = require "resty.brotli.encoder"
+local brotlidec = require "resty.brotli.decoder"
+
+local encoder = brotlienc:new()
+local decoder = brotlidec:new()
+
 local txt = string.rep("ABCD", 1000)
 print("Uncompressed size:", #txt)
-local c, err = bro:compress(txt)
+local c, err = encoder:compress(txt)
 print("Compressed size:", #c)
-local txt2, err = bro:decompress(c)
+local txt2, err = decoder:decompress(c)
 assert(txt == txt2)
 ````
 
-in nginx with lua-nginx-module of Openresty
+In nginx with lua-nginx-module
 ```` lua
 # static contents
 location / {
     rewrite_by_lua_block {
-       local brotli = require "resty.brotli"
+       local brotlidec = require "resty.brotli.decoder"
        local brotli_ok = false
        local header = ngx.var.http_accept_encoding
        if header then
@@ -45,10 +51,10 @@ location / {
           end
        end
        if not brotli_ok then
-          ngx.ctx.bro = brotli:new()
+          ngx.ctx.decoder = brotlidec:new()
        end
-       ngx.ctx.bro_ok = brotli_ok       
-       ngx.req.set_uri(ngx.var.uri..".br")    
+       ngx.ctx.brotli_ok = brotli_ok
+       ngx.req.set_uri(ngx.var.uri..".br")
     }
 
     header_filter_by_lua_block {
@@ -61,19 +67,16 @@ location / {
     }
     
     body_filter_by_lua_block {
-       if ngx.ctx.bro_ok then
+       if ngx.ctx.brotli_ok then
           return
        end
-    
-       local brotli = require "resty.brotli"
-       local bro = ngx.ctx.bro
-       local ret, stream = bro:decompressStream(ngx.arg[1])
+
+       local decoder = ngx.ctx.decoder
+       local stream = decoder:decompressStream(ngx.arg[1])
        ngx.arg[1] = stream
-       if ret == brotli.BROTLI_DECODER_RESULT_SUCCESS then
-          bro:destroyDecoder()
+       if decoder:resultSuccess() then
+          decoder:destroy()
           ngx.arg[2] = true
-       else
-          ngx.ctx.bro = bro
        end
     }
 }
@@ -89,7 +92,7 @@ location /hello {
     }
 
     header_filter_by_lua_block {
-        local brotli = require "resty.brotli"
+        local brotlienc = require "resty.brotli.encoder"
         local brotli_ok = false
         local header = ngx.var.http_accept_encoding
         if header then
@@ -97,31 +100,27 @@ location /hello {
               brotli_ok = true
            end
         end
-        ngx.ctx.bro_ok = brotli_ok
+        ngx.ctx.brotli_ok = brotli_ok
         ngx.header["Vary"] = "Accept-Encoding"
         if brotli_ok then
            ngx.header.content_length = nil
            ngx.header["Content-Encoding"] = "br"
-           ngx.ctx.bro = brotli:new()
+           ngx.ctx.encoder = brotlienc:new()
         end
     }
 
     body_filter_by_lua_block {
-        if not ngx.ctx.bro_ok then
+        if not ngx.ctx.brotli_ok then
            return
         end                
-        local brotli = require "resty.brotli"
-        local bro = ngx.ctx.bro
-        ngx.arg[1] = bro:compressStream(ngx.arg[1])
-        
-        if bro:encoderIsFinished() then
-           bro:destroyEncoder()
+        local encoder = ngx.ctx.encoder
+        ngx.arg[1] = encoder:compressStream(ngx.arg[1])        
+        if encoder:isFinished() then
+           encoder:destroy()
            ngx.arg[2] = true
-        else
-           ngx.ctx.bro = bro
         end
     }
-}  
+}
 ````
 
 Methods
@@ -129,7 +128,8 @@ Methods
 
 new
 ---
-`syntax: bro, err = brotli:new(options?)`
+`syntax: encoder, err = brotlienc:new(options?)`
+`syntax: decoder, err = brotlidec:new()`
 
 Create brotli encoder and decoder.
 
@@ -151,44 +151,44 @@ The `options` argument is a Lua table holding the following keys:
    `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
    `BROTLI_MODE_FONT` (2, for WOFF 2.0).
 
-compress
---------
-`syntax: encoded_buffer, err = bro:compress(input_buffer)`
 
-Compresses the data in input_buffer into encoded_buffer.
-
-compressStream
+destroy, encoder
 --------------
-`syntax: buffer = bro:compressStream(stream)`
-
-Compresses input stream to output buffer.
-
-decompress
-----------
-`syntax: decoded_buffer, err = bro:decompress(encoded_buffer)`
-
-Decompresses the data in encoded_buffer into decoded_buffer.
-
-decompressStream
-----------------
-`syntax: ret, buffer = bro:decompressStream(encoded_buffer)`
-
-Decompresses the data in encoded_buffer into buffer stream
-
-destroyEncoder
---------------
-`syntax: bro:destroyEncoder()`
+`syntax: encoder:destroy()`
 
 Deinitializes and frees BrotliEncoderState instance.
 
-destroyDecoder
+destroy, decoder
 --------------
-`syntax: bro:destroyDecoder()`
+`syntax: decoder:destroy()`
 
 Deinitializes and frees BrotliDecoderState instance.
 
-encoderIsFinished
------------------
-`syntax: isfinished = bro:encoderIsFinished()`
 
-Checks if encoder instance reached the final state.
+compress
+--------
+`syntax: encoded_buffer, err = encoder:compress(input_buffer)`
+
+Compresses the data in input_buffer into encoded_buffer.
+
+
+compressStream
+--------------
+`syntax: buffer = encoder:compressStream(stream)`
+
+Compresses input stream to output buffer.
+
+
+decompress
+----------
+`syntax: decoded_buffer, err = decoder:decompress(encoded_buffer)`
+
+Decompresses the data in encoded_buffer into decoded_buffer.
+
+
+decompressStream
+----------------
+`syntax: buffer = decoder:decompressStream(encoded_buffer)`
+
+Decompresses the data in encoded_buffer into buffer stream
+
