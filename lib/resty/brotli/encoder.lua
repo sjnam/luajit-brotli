@@ -12,12 +12,15 @@ local ffi_str = ffi.string
 local ffi_typeof = ffi.typeof
 
 local assert = assert
+local tonumber = tonumber
 local tab_concat = table.concat
 local tab_insert = table.insert
 local setmetatable = setmetatable
 
 
 ffi.cdef[[
+void free(void *ptr);
+
 typedef enum BrotliEncoderMode {
   BROTLI_MODE_GENERIC = 0,
   BROTLI_MODE_TEXT = 1,
@@ -65,11 +68,15 @@ int BrotliEncoderCompress(
 
 int BrotliEncoderIsFinished(BrotliEncoderState* state);
 
+int BrotliEncoderHasMoreOutput(BrotliEncoderState* state);
+
 void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
+
+uint32_t BrotliEncoderVersion(void);
 ]]
 
 
-local _M = { _VERSION = '0.10' }
+local _M = { _VERSION = '0.20' }
 
 
 local mt = { __index = _M }
@@ -116,6 +123,11 @@ function _M.new (self, options)
       return nil, err
    end
    return setmetatable( { state = state, options = options }, mt)
+end
+
+
+function _M.destroy (self)
+   brotlienc.BrotliEncoderDestroyInstance(self.state)
 end
 
 
@@ -196,8 +208,8 @@ function _M.compressStream (self, str)
       end
    end
 
-   ffi_gc(buff, free)
-   ffi_gc(buffer, free)
+   ffi_gc(buff, C.free)
+   ffi_gc(buffer, C.free)
 
    if is_ok then
       return tab_concat(res)
@@ -212,8 +224,13 @@ function _M.isFinished (self)
 end
 
 
-function _M.destroy (self)
-   brotlienc.BrotliEncoderDestroyInstance(self.state)
+function _M.hasMoreOutput (self)
+   return brotlienc.BrotliEncoderHasMoreOutput(self.state) == BROTLI_TRUE
+end
+
+
+function _M.version (self)
+   return tonumber(brotlienc.BrotliEncoderVersion())
 end
 
 

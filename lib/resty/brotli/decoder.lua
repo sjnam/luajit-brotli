@@ -4,26 +4,19 @@
 local ffi = require "ffi"
 
 local C = ffi.C
-local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_load = ffi.load
-local ffi_copy = ffi.copy
 local ffi_str = ffi.string
 local ffi_typeof = ffi.typeof
 
 local assert = assert
+local tonumber = tonumber
 local tab_concat = table.concat
 local tab_insert = table.insert
 local setmetatable = setmetatable
 
 
 ffi.cdef[[
-typedef enum BrotliEncoderMode {
-  BROTLI_MODE_GENERIC = 0,
-  BROTLI_MODE_TEXT = 1,
-  BROTLI_MODE_FONT = 2
-} BrotliEncoderMode;
-
 typedef enum {
   BROTLI_DECODER_RESULT_ERROR = 0,
   BROTLI_DECODER_RESULT_SUCCESS = 1,
@@ -46,10 +39,16 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
   size_t* available_in, const uint8_t** next_in,
   size_t* available_out, uint8_t** next_out,
   size_t* total_out);
+
+int BrotliDecoderIsUsed(const BrotliDecoderState* state);
+
+int BrotliDecoderIsFinished(const BrotliDecoderState* state);
+
+uint32_t BrotliDecoderVersion(void);
 ]]
 
 
-local _M = { _VERSION = '0.10' }
+local _M = { _VERSION = '0.20' }
 
 
 local mt = { __index = _M }
@@ -64,18 +63,8 @@ local ptr_size_t = ffi_typeof("size_t[1]")
 local BROTLI_TRUE = 1
 local BROTLI_FALSE = 0
 
-local BROTLI_DEFAULT_QUALITY = 11
-local BROTLI_DEFAULT_WINDOW = 22
-local BROTLI_DEFAULT_MODE = C.BROTLI_MODE_GENERIC
-
 local _BUFFER_SIZE = 65536
 
---[[
-_M.BROTLI_DECODER_RESULT_ERROR = C.BROTLI_DECODER_RESULT_ERROR
-_M.BROTLI_DECODER_RESULT_SUCCESS = C.BROTLI_DECODER_RESULT_SUCCESS
-_M.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT = C.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT
-_M.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
---]]
 
 local brotlidec = ffi_load("brotlidec")
 
@@ -95,6 +84,11 @@ function _M.new (self)
       return nil, err
    end
    return setmetatable( { state = state }, mt)
+end
+
+
+function _M.destroy (self)
+   brotlidec.BrotliDecoderDestroyInstance(self.state)
 end
 
 
@@ -163,8 +157,18 @@ function _M.resultSuccess (self)
 end
 
 
-function _M.destroy (self)
-   brotlidec.BrotliDecoderDestroyInstance(self.state)
+function _M.isUsed (self)
+   return brotlidec.BrotliDecoderIsUsed(self.state) == BROTLI_TRUE
+end
+
+
+function _M.isFinished (self)
+   return brotlidec.BrotliDecoderIsFinished(self.state) == BROTLI_TRUE
+end
+
+
+function _M.version (self)
+   return tonumber(brotlidec.BrotliDecoderVersion())
 end
 
 
