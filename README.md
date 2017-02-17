@@ -73,14 +73,11 @@ location /brotli {
     }
     
     body_filter_by_lua_block {
-       if ngx.ctx.brotli_ok then
-          return
-       end
-
+       if ngx.ctx.brotli_ok then return end
        local decoder = ngx.ctx.decoder
        local stream = decoder:decompressStream(ngx.arg[1])
        ngx.arg[1] = stream
-       if decoder:resultSuccess() then
+       if decoder:isFinished() then
           decoder:destroy()
           ngx.arg[2] = true
        end
