@@ -39,9 +39,8 @@ assert(txt == txt2)
 
 * In nginx with lua-nginx-module
 
-  The following sample nginx.conf, the document root directory, `html/brotli`
-has only precompressed files with the ".br" filename extension instead of
-reqular files.
+  The document directory, `html/brotli` has only precompressed files with the ".br" filename
+  extension instead of reqular files. If a brower does not support "br", decompress on-the-fly.
 ```nginx
 # static contents
 location /brotli {
@@ -75,8 +74,7 @@ location /brotli {
     body_filter_by_lua_block {
        if ngx.ctx.brotli_ok then return end
        local decoder = ngx.ctx.decoder
-       local stream = decoder:decompressStream(ngx.arg[1])
-       ngx.arg[1] = stream
+       ngx.arg[1] = decoder:decompressStream(ngx.arg[1])
        if decoder:isFinished() then
           decoder:destroy()
           ngx.arg[2] = true
@@ -85,7 +83,7 @@ location /brotli {
 }
 ```
 
-* Compressing on the fly for dynamic contents
+* Compressing on-the-fly for dynamic contents
 ```nginx
 # dynamic contents
 location /hello {
@@ -116,9 +114,7 @@ location /hello {
     }
 
     body_filter_by_lua_block {
-        if not ngx.ctx.brotli_ok then
-           return
-        end                
+        if not ngx.ctx.brotli_ok then return end                
         local encoder = ngx.ctx.encoder
         ngx.arg[1] = encoder:compressStream(ngx.arg[1])        
         if encoder:isFinished() then
