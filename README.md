@@ -14,7 +14,7 @@ Installation
 To install `lua-resty-brotli` you need to install
 [Brotli](https://github.com/google/brotli#build-instructions)
 with shared libraries firtst.
-Then you can install `lua-resty-brotli` by placing `lib/resty/brotli.lua` to
+Then you can install `lua-resty-brotli` by placing `lib/resty/brotli/{encoder,decoder}.lua` to
 your lua library path.
 
 
@@ -39,11 +39,12 @@ assert(txt == txt2)
 
 * In nginx with lua-nginx-module
 
-  The document directory, `html/brotli` has only precompressed files with the ".br" filename
-  extension instead of reqular files. If a brower does not support "br", decompress on-the-fly.
+  The document root directory, `html` has only precompressed files with the ".br" filename
+  extension instead of reqular files. If a brower does not support "br",
+  it decompress on-the-fly.
 ```nginx
 # static contents
-location /brotli {
+location / {
     root html;
     
     rewrite_by_lua_block {
