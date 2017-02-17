@@ -130,13 +130,13 @@ Methods
 
 new
 ---
-`syntax: encoder, err = brotlienc:new(options?)`
+* `syntax: encoder, err = brotlienc:new(options?)`
 
-`syntax: decoder, err = brotlidec:new()`
+* `syntax: decoder, err = brotlidec:new()`
 
-Create brotli encoder and decoder.
+Create brotli encoder or decoder.
 
-The `options` argument is a Lua table holding the following keys:
+The `options` argument of the encoder is a lua table holding the following keys:
 
 * `quality`
 
@@ -150,9 +150,13 @@ The `options` argument is a Lua table holding the following keys:
 
 * `mode`
 
-    The compression mode can be `BROTLI_MODE_GENERIC` (0, default),
-   `BROTLI_MODE_TEXT` (1, for UTF-8 format text input) or
-   `BROTLI_MODE_FONT` (2, for WOFF 2.0).
+    The compression mode can be
+    
+    * `BROTLI_MODE_GENERIC` (0, default)
+    
+    * `BROTLI_MODE_TEXT` (1, for UTF-8 format text input)
+
+    * `BROTLI_MODE_FONT` (2, for WOFF 2.0)
 
 
 destroy
@@ -189,7 +193,7 @@ Decompresses the data in encoded_buffer into decoded_buffer.
 
 decompressStream
 ----------------
-`syntax: buffer = decoder:decompressStream(encoded_buffer)`
+`syntax: buffer = decoder:decompressStream(encoded_stream)`
 
 Decompresses the data in encoded_buffer into buffer stream
 
