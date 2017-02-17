@@ -78,53 +78,7 @@ local function _createInstance ()
 end
 
 
-function _M.new (self)
-   local state, err = _createInstance()
-   if not state then
-      return nil, err
-   end
-   return setmetatable( { state = state }, mt)
-end
-
-
-function _M.destroy (self)
-   brotlidec.BrotliDecoderDestroyInstance(self.state)
-end
-
-
-function _M.decompress (self, encoded_buffer, bufsize)
-   local state = _createInstance()
-   local bufsize = bufsize or _BUFFER_SIZE
-
-   local available_in = ffi_new(ptr_size_t, #encoded_buffer)
-   local next_in = ffi_new(pptr_const_utint8_t)
-   next_in[0] = encoded_buffer
-   local buffer = ffi_new(arr_utint8_t, bufsize)
-
-   local decoded_buffer = {}
-   local ret = C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
-   while ret == C.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT do
-      local available_out = ffi_new(ptr_size_t, bufsize)
-      local next_out = ffi_new(pptr_utint8_t, buffer)
-      ret = brotlidec.BrotliDecoderDecompressStream(state,
-                                                    available_in, next_in,
-                                                    available_out, next_out,
-                                                    nil)
-      local used_out = bufsize - available_out[0]
-      if used_out ~= 0 then
-         decoded_buffer[#decoded_buffer+1] = ffi_str(buffer, used_out)
-      end
-   end
-
-   assert(ret == C.BROTLI_DECODER_RESULT_SUCCESS)
-   brotlidec.BrotliDecoderDestroyInstance(state)
-   
-   return tab_concat(decoded_buffer)
-end
-
-
-function _M.decompressStream (self, encoded_buffer)
-   local state = self.state
+local function _decompress_stream (encoded_buffer, state)
    local bufsize = _BUFFER_SIZE
    local available_in = ffi_new(ptr_size_t, #encoded_buffer)
    local next_in = ffi_new(pptr_const_utint8_t)
@@ -145,10 +99,39 @@ function _M.decompressStream (self, encoded_buffer)
          decoded_buffer[#decoded_buffer+1] = ffi_str(buffer, used_out)
       end
    end
-
-   self.status = ret
    
-   return tab_concat(decoded_buffer)
+   return ret, tab_concat(decoded_buffer)
+end
+
+
+function _M.new (self)
+   local state, err = _createInstance()
+   if not state then
+      return nil, err
+   end
+   return setmetatable( { state = state }, mt)
+end
+
+
+function _M.destroy (self)
+   brotlidec.BrotliDecoderDestroyInstance(self.state)
+end
+
+
+function _M.decompress (self, encoded_buffer)
+   local state = _createInstance()
+   local ret, buffer = _decompress_stream(encoded_buffer, state)
+   assert(ret == C.BROTLI_DECODER_RESULT_SUCCESS)
+   brotlidec.BrotliDecoderDestroyInstance(state)   
+   return buffer
+end
+
+
+function _M.decompressStream (self, encoded_buffer)
+   local state = self.state
+   local ret, buffer = _decompress_stream(encoded_buffer, state)
+   self.status = ret
+   return buffer
 end
 
 
