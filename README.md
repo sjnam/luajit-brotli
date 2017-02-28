@@ -128,7 +128,7 @@ location /hello {
 
 * Decompressing on-the-fly for the compressed request body
 ```nginx
-location /indecom {
+location /reqdecom {
     content_by_lua_block {
         local brotlidec = require "resty.brotli.decoder"
 
