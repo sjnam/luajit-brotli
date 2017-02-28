@@ -126,6 +126,31 @@ location /hello {
 }
 ```
 
+* Decompressing on-the-fly for the compressed request body
+```nginx
+location /indecom {
+    content_by_lua_block {
+        local brotlidec = require "resty.brotli.decoder"
+
+        local decoder = brotlidec:new()
+        local sock, err = ngx.req.socket()
+        if not sock then
+           print(err)
+           ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+        end
+
+        sock:settimeout(1000)
+        while true do
+           local line, err, partial = sock:receive(1024)
+           line = decoder:decompressStream(line or partial)
+           ngx.print(line)
+           if err == "closed" then break end
+        end
+        decoder:destroy()
+    }
+}
+```
+
 Methods
 =======
 
