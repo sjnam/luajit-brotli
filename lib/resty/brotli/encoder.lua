@@ -208,9 +208,6 @@ function _M.compressStream (self, str)
       end
    end
 
-   ffi_gc(buff, C.free)
-   ffi_gc(buffer, C.free)
-
    if is_ok then
       return tab_concat(res)
    end
