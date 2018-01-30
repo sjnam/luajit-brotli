@@ -6,8 +6,7 @@ lua-resty-brotli - Lua bindings to Google
 
 Status
 ======
-This library is still experimental and under early development.
-
+This library is still experimental.
 
 Installation
 ============
