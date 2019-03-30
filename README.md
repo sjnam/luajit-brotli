@@ -217,3 +217,10 @@ decompressStream
 
 Decompresses the data in encoded_buffer into buffer stream
 
+Author
+======
+Soojin Nam jsunam@gmail.com
+
+License
+=======
+Public Domain
