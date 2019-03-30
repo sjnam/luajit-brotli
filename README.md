@@ -1,19 +1,14 @@
 Name
 ====
-lua-resty-brotli - Lua bindings to Google
-[Brotli](https://github.com/google/brotli) for LuaJIT using FFI.
+luajit-brotli - Google [Brotli](https://github.com/google/brotli) ffi bounding
 
-
-Status
-======
-This library is still experimental.
 
 Installation
 ============
-To install `lua-resty-brotli` you need to install
+To install `luajit-brotli` you need to install
 [Brotli](https://github.com/google/brotli#build-instructions)
 with shared libraries firtst.
-Then you can install `lua-resty-brotli` by placing `lib/resty/brotli/{encoder,decoder}.lua` to
+Then you can install `luajit-brotli` by placing `brotli/{encoder,decoder}.lua` to
 your lua library path.
 
 
@@ -22,8 +17,8 @@ Synopsis
 
 * Simple usage
 ```lua
-local brotlienc = require "resty.brotli.encoder"
-local brotlidec = require "resty.brotli.decoder"
+local brotlienc = require "brotli.encoder"
+local brotlidec = require "brotli.decoder"
 
 local encoder = brotlienc:new()
 local decoder = brotlidec:new()
@@ -47,7 +42,7 @@ location / {
     root html;
     
     rewrite_by_lua_block {
-       local brotlidec = require "resty.brotli.decoder"
+       local brotlidec = require "brotli.decoder"
        local brotli_ok = false
        local header = ngx.var.http_accept_encoding
        if header then
@@ -96,7 +91,7 @@ location /hello {
     }
 
     header_filter_by_lua_block {
-        local brotlienc = require "resty.brotli.encoder"
+        local brotlienc = require "brotli.encoder"
         local brotli_ok = false
         local header = ngx.var.http_accept_encoding
         if header then
@@ -129,7 +124,7 @@ location /hello {
 ```nginx
 location /reqdecom {
     content_by_lua_block {
-        local brotlidec = require "resty.brotli.decoder"
+        local brotlidec = require "brotli.decoder"
 
         local decoder = brotlidec:new()
         local sock, err = ngx.req.socket()

@@ -1,5 +1,5 @@
-local brotlienc = require "lib.resty.brotli.encoder"
-local brotlidec = require "lib.resty.brotli.decoder"
+local brotlienc = require "brotli.encoder"
+local brotlidec = require "brotli.decoder"
 
 local encoder = brotlienc:new()
 local decoder = brotlidec:new()
