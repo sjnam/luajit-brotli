@@ -1,4 +1,6 @@
--- Copyright (C) Soojin Nam
+
+-- google brotli ffi binding
+-- Written by Soojin Nam. Public Domain.
 
 
 local ffi = require "ffi"
