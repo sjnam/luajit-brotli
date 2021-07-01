@@ -59,7 +59,7 @@ location / {
 
     header_filter_by_lua_block {
        ngx.header["Vary"] = "Accept-Encoding"                
-       if not ngx.ctx.bro_ok then
+       if not ngx.ctx.brotli_ok then
           ngx.header.content_length = nil
        else
           ngx.header["Content-Encoding"] = "br"
